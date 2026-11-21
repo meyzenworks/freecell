@@ -139,7 +139,7 @@
   .supporting { font-size: 12px; color: var(--md-on-surface-variant); margin: 4px 16px 0; }
 
   .snackbar {
-    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    position: fixed; left: 50%; bottom: 72px; transform: translateX(-50%);
     background: var(--md-on-surface); color: var(--md-surface); white-space: nowrap; z-index: 3000;
     padding: 14px 16px; border-radius: 4px; font-size: 14px; display: none;
   }
@@ -367,14 +367,15 @@
   }
 
   // Cards flying up on their own follow the main move one after another.
-  const autoDelays = () => new Map(autoOrder.map((id, k) => [id, 160 + k * 60]));
+  const MOVE_MS = 220, AUTO_MS = 380, AUTO_START = MOVE_MS + 60;
+  const autoDelays = () => new Map(autoOrder.map((id, k) => [id, AUTO_START + k * 110]));
   function afterMove() {
     const delays = autoDelays();
     if (S.found.every(f => f === 13)) {
-      S.won = true; recordWin(); save(); render({ delays }); updateStatus();
-      setTimeout(showWin, 450 + Math.max(0, ...delays.values())); return;
+      S.won = true; recordWin(); save(); render({ delays, auto: new Set(delays.keys()) }); updateStatus();
+      setTimeout(showWin, (delays.size ? AUTO_MS : MOVE_MS) + 250 + Math.max(0, ...delays.values())); return;
     }
-    save(); render({ delays }); updateStatus();
+    save(); render({ delays, auto: new Set(delays.keys()) }); updateStatus();
     if (!anyMove()) snack('No moves left — try Undo or a new game');
   }
 
@@ -491,11 +492,16 @@
     if (moved && !renderOpts.instant) {
       const d = (renderOpts.delays && renderOpts.delays.get(+el.dataset.id)) || 0;
       const top = 400 + (lift++);
+      // cards sent to the foundations on their own glide a little slower, with an even ease
+      const auto = !!renderOpts.auto && renderOpts.auto.has(+el.dataset.id);
+      const dur = auto ? AUTO_MS : MOVE_MS;
+      el.style.transitionDuration = auto ? AUTO_MS + 'ms' : '';
+      el.style.transitionTimingFunction = auto ? 'cubic-bezier(.3,0,.2,1)' : '';
       el.style.transitionDelay = d + 'ms';
       // rise above other cards only when this card starts travelling, then settle
       if (d) el._zr = setTimeout(() => { el.style.zIndex = top; }, d); else el.style.zIndex = top;
-      el._zt = setTimeout(() => { el.style.zIndex = z; el.style.transitionDelay = '0ms'; }, d + 260);
-    } else { el.style.zIndex = z; el.style.transitionDelay = '0ms'; }
+      el._zt = setTimeout(() => { el.style.zIndex = z; el.style.transitionDelay = '0ms'; el.style.transitionDuration = ''; el.style.transitionTimingFunction = ''; }, d + dur + 40);
+    } else { el.style.zIndex = z; el.style.transitionDelay = '0ms'; el.style.transitionDuration = ''; el.style.transitionTimingFunction = ''; }
   }
 
   function render(opts = {}) {
