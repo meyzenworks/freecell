@@ -154,6 +154,36 @@
     padding: 14px 16px; border-radius: 4px; font-size: 14px; display: none;
   }
   .snackbar.show { display: block; }
+  /* Title: app mark + name, in the theme's primary tones */
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .mark { width: 38px; height: 38px; border-radius: 12px; background: var(--md-primary-container); flex: none; display: block; }
+  .brand .mark svg { width: 38px; height: 38px; display: block; }
+  .brand .m-back { fill: var(--md-primary); opacity: .55; }
+  .brand .m-card { fill: #FFFFFF; stroke: var(--md-primary); stroke-width: 1.2; }
+  .brand .m-suit { fill: var(--md-primary); }
+  .brand .words { display: flex; flex-direction: column; line-height: 1; }
+  .brand .name { font-size: 22px; font-weight: 500; letter-spacing: -.2px; color: var(--md-on-surface); }
+  .brand .kind { font-size: 11px; font-weight: 500; letter-spacing: 1.6px; text-transform: uppercase; color: var(--md-primary); margin-top: 4px; }
+  /* Landscape phones: one slim top row holds everything, the rest is table */
+  @media (orientation: landscape) and (max-height: 560px) {
+    .app { max-width: none; padding: 2px 10px 8px; display: grid; gap: 0 6px;
+      grid-template-columns: auto minmax(0, 1fr) auto auto auto; grid-template-rows: 52px minmax(0, 1fr); align-items: center; }
+    .topbar { display: contents; }
+    .topbar h1 { grid-column: 1; grid-row: 1; padding: 0 6px 0 4px; }
+    #statsBtn { grid-column: 4; grid-row: 1; } #helpBtn { grid-column: 5; grid-row: 1; }
+    .status { grid-column: 2; grid-row: 1; margin: 0; align-items: center; justify-content: flex-start; gap: 12px; min-width: 0; }
+    .status > div:first-child { min-width: 0; }
+    .game-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stats { gap: 10px; }
+    .actions { grid-column: 3; grid-row: 1; margin: 0; flex-wrap: nowrap; gap: 4px; padding-right: 2px; }
+    .actions .btn { height: 36px; padding: 0 14px; }
+    .table-wrap { grid-column: 1 / -1; grid-row: 2; align-self: stretch; height: 100%; border-radius: 20px; }
+  }
+  /* narrower landscape: tonal buttons show their icon only */
+  @media (orientation: landscape) and (max-height: 560px) and (max-width: 940px) {
+    .actions .btn.tonal { width: 40px; padding: 0; justify-content: center; font-size: 0; gap: 0; }
+    .actions .btn.tonal svg { width: 20px; height: 20px; }
+  }
   .dialog .credits { font-size: 12px; text-align: center; margin: 14px 0 0; }
   .dialog .credits a { color: var(--md-primary); }
 </style>
@@ -168,7 +198,14 @@
 
 <div class="app">
   <header class="topbar">
-    <h1>FreeCell</h1>
+    <h1 class="brand">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 36 36">
+        <rect x="9" y="5" width="17" height="24" rx="3.5" transform="rotate(-12 17.5 17)" class="m-back"/>
+        <rect x="11" y="7" width="17" height="24" rx="3.5" transform="rotate(8 19.5 19)" class="m-card"/>
+        <path transform="translate(13 13.2) scale(.52) rotate(8 12 12)" class="m-suit" d="M12 21.3S3.2 15.6 3.2 9.2C3.2 5.9 5.7 3.5 8.6 3.5c1.6 0 2.7.7 3.4 1.8.7-1.1 1.8-1.8 3.4-1.8 2.9 0 5.4 2.4 5.4 5.7 0 6.4-8.8 12.1-8.8 12.1z"/>
+      </svg></span>
+      <span class="words"><span class="name">FreeCell</span><span class="kind">Solitaire</span></span>
+    </h1>
     <button class="icon-btn" id="statsBtn" aria-label="Statistics">
       <svg class="i" viewBox="0 0 24 24"><path d="M16 11V3H8v6H2v12h20V11h-6zm-6-6h4v14h-4V5zm-6 6h4v8H4v-8zm16 8h-4v-6h4v6z"/></svg>
     </button>
@@ -191,9 +228,9 @@
   <div class="table-wrap" id="wrap"><div class="table" id="table"></div></div>
 
   <div class="actions">
-    <button class="btn tonal" id="undoBtn"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>Undo</button>
-    <button class="btn tonal" id="hintBtn"><svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>Hint</button>
-    <button class="btn tonal" id="restartBtn"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>Restart</button>
+    <button class="btn tonal" id="undoBtn" aria-label="Undo"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>Undo</button>
+    <button class="btn tonal" id="hintBtn" aria-label="Hint"><svg viewBox="0 0 24 24"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/></svg>Hint</button>
+    <button class="btn tonal" id="restartBtn" aria-label="Restart"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>Restart</button>
     <button class="btn filled" id="newBtn"><svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>New game</button>
   </div>
 </div>
@@ -501,8 +538,21 @@
     }
   }
 
+  // same condition as the landscape CSS: a phone turned sideways
+  const LANDSCAPE_PHONE = matchMedia('(orientation: landscape) and (max-height: 560px)');
   function computeLayout() {
     const W = wrap.clientWidth, H = wrap.clientHeight;
+    const side = LANDSCAPE_PHONE.matches;
+    if (side) {
+      // free cells as a 2x2 block on the left, foundations 2x2 on the right, columns get the full height
+      let gap = Math.max(4, Math.min(12, W * 0.01));
+      let cw = Math.min((W - gap * 14) / 12, (H - 2 * Math.max(gap, 8) - gap) / (2 * 1.4), 116);
+      gap = Math.max(4, Math.min(14, cw * 0.13));
+      const ch = cw * 1.4, block = gap * 1.6;
+      const total = cw * 12 + gap * 9 + block * 2;
+      const x0 = (W - total) / 2, y0 = Math.max(gap, 8);
+      L = { W, H, gap, cw, ch, x0, y0, side, block, tabTop: y0 };
+    } else {
     let gap = Math.max(4, Math.min(14, W * 0.014));
     let cw = (W - gap * 9) / 8;
     cw = Math.min(cw, H / (1.4 * 4.4), 116);
@@ -510,11 +560,14 @@
     const ch = cw * 1.4;
     const total = cw * 8 + gap * 7;
     const x0 = (W - total) / 2, y0 = Math.max(gap, 10);
-    L = { W, H, gap, cw, ch, x0, y0, tabTop: y0 + ch + gap * 1.8 };
-    table.style.setProperty('--cw', cw + 'px');
-    table.style.setProperty('--ch', ch + 'px');
+    L = { W, H, gap, cw, ch, x0, y0, side, tabTop: y0 + ch + gap * 1.8 };
+    }
+    table.style.setProperty('--cw', L.cw + 'px');
+    table.style.setProperty('--ch', L.ch + 'px');
   }
-  const colX = c => L.x0 + c * (L.cw + L.gap);
+  const colX = c => L.side ? L.x0 + (c + 2) * (L.cw + L.gap) + L.block : L.x0 + c * (L.cw + L.gap);
+  const cellPos = i => L.side ? [L.x0 + (i % 2) * (L.cw + L.gap), L.y0 + Math.floor(i / 2) * (L.ch + L.gap)] : [colX(i), L.y0];
+  const foundPos = s => L.side ? [colX(8) - L.gap + L.block + (s % 2) * (L.cw + L.gap), L.y0 + Math.floor(s / 2) * (L.ch + L.gap)] : [colX(s + 4), L.y0];
   function fanOffset(n) {
     if (n < 2) return 0;
     const avail = L.H - L.tabTop - L.ch - 8;
@@ -550,8 +603,8 @@
     if (opts.instant) table.classList.add('no-anim');
     const seen = new Array(52).fill(false);
     for (let i = 0; i < 4; i++) {
-      for (const [arr, x] of [[slotEl.cell, colX(i)], [slotEl.found, colX(i + 4)]]) {
-        Object.assign(arr[i].style, { left: x + 'px', top: L.y0 + 'px', width: L.cw + 'px', height: L.ch + 'px' });
+      for (const [arr, [x, y]] of [[slotEl.cell, cellPos(i)], [slotEl.found, foundPos(i)]]) {
+        Object.assign(arr[i].style, { left: x + 'px', top: y + 'px', width: L.cw + 'px', height: L.ch + 'px' });
       }
     }
     S.cols.forEach((col, c) => {
@@ -559,9 +612,9 @@
       const off = fanOffset(col.length);
       col.forEach((id, k) => { place(cardEl[id], colX(c), L.tabTop + k * off, 10 + k); seen[id] = true; });
     });
-    S.cells.forEach((id, i) => { if (id >= 0) { place(cardEl[id], colX(i), L.y0, 5); seen[id] = true; } });
+    S.cells.forEach((id, i) => { if (id >= 0) { place(cardEl[id], ...cellPos(i), 5); seen[id] = true; } });
     for (let s = 0; s < 4; s++) for (let r = 1; r <= S.found[s]; r++) {
-      const id = s * 13 + r - 1; place(cardEl[id], colX(s + 4), L.y0, r); seen[id] = true;
+      const id = s * 13 + r - 1; place(cardEl[id], ...foundPos(s), r); seen[id] = true;
     }
     cardEl.forEach((el, id) => { if (!seen[id]) el.style.display = 'none'; el.style.transform = ''; el.classList.remove('dragging'); });
     if (opts.instant) { void table.offsetWidth; table.classList.remove('no-anim'); }
@@ -576,9 +629,14 @@
   }
   function targetAt(x, y) {
     const r = table.getBoundingClientRect(); x -= r.left; y -= r.top;
-    const c = Math.floor((x - L.x0 + L.gap / 2) / (L.cw + L.gap));
-    if (c < 0 || c > 7) return null;
-    if (y < L.tabTop - L.gap * 0.6) return c < 4 ? { t: 'cell', i: c } : { t: 'found' };
+    const inBox = ([bx, by]) => x >= bx - L.gap / 2 && x < bx + L.cw + L.gap / 2 && y >= by - L.gap / 2 && y < by + L.ch + L.gap / 2;
+    if (L.side) {
+      for (let i = 0; i < 4; i++) { if (inBox(cellPos(i))) return { t: 'cell', i }; if (inBox(foundPos(i))) return { t: 'found' }; }
+    }
+    let c = -1;
+    for (let k = 0; k < 8; k++) if (x >= colX(k) - L.gap / 2 && x < colX(k) + L.cw + L.gap / 2) c = k;
+    if (c < 0) return null;
+    if (!L.side && y < L.tabTop - L.gap * 0.6) return c < 4 ? { t: 'cell', i: c } : { t: 'found' };
     return { t: 'col', c };
   }
 
