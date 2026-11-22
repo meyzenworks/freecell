@@ -390,14 +390,21 @@
 
   // Cards flying up on their own follow the main move one after another.
   const MOVE_MS = 220, AUTO_MS = 380, AUTO_START = MOVE_MS + 60;
-  var autoTimer = null;
+  var autoTimer = null, autoToken = 0;
   // Show your move first; once it has landed, cards go up to the foundations one after another.
   function showMove(mid) {
     clearTimeout(autoTimer); autoTimer = null;
     if (!autoOrder.length || !mid) { render(); return 0; }
     const real = S; S = mid; render(); S = real;
     const delays = new Map(autoOrder.map((id, k) => [id, k * 110]));
-    autoTimer = setTimeout(() => { autoTimer = null; render({ delays, auto: new Set(delays.keys()) }); }, AUTO_START);
+    const go = () => { if (token !== autoToken) return; clearTimeout(autoTimer); autoTimer = null; render({ delays, auto: new Set(delays.keys()) }); };
+    const token = ++autoToken;
+    // wait until the cards you moved have really landed (slow phones can start an animation late)
+    void table.offsetWidth;
+    const anims = movedEls.flatMap(el => el.getAnimations ? el.getAnimations() : []);
+    autoTimer = setTimeout(go, 900);   // safety net
+    if (anims.length) Promise.all(anims.map(an => an.finished.catch(() => {}))).then(() => setTimeout(go, 60));
+    else autoTimer = setTimeout(go, AUTO_START);
     return AUTO_START + (autoOrder.length - 1) * 110 + AUTO_MS;
   }
   function afterMove(mid) {
@@ -513,13 +520,14 @@
     const avail = L.H - L.tabTop - L.ch - 8;
     return Math.max(4, Math.min(L.ch * 0.33, avail / (n - 1)));
   }
-  let renderOpts = {}, lift = 0;
+  let renderOpts = {}, lift = 0, movedEls = [];
   function place(el, x, y, z) {
     const moved = Math.abs((el._x ?? -1) - x) > .5 || Math.abs((el._y ?? -1) - y) > .5 || el.classList.contains('dragging');
     el.style.display = '';
     el.style.left = x + 'px'; el.style.top = y + 'px'; el._x = x; el._y = y;
     clearTimeout(el._zt); clearTimeout(el._zr);
     if (moved && !renderOpts.instant) {
+      movedEls.push(el);
       const d = (renderOpts.delays && renderOpts.delays.get(+el.dataset.id)) || 0;
       const top = 400 + (lift++);
       // cards sent to the foundations on their own glide a little slower, with an even ease
@@ -535,7 +543,8 @@
   }
 
   function render(opts = {}) {
-    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; } autoToken++;
+    movedEls = [];
     renderOpts = opts; lift = 0;
     if (!L.cw) computeLayout();
     if (opts.instant) table.classList.add('no-anim');
