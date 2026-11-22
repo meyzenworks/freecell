@@ -85,6 +85,16 @@
   .card.nudge { animation: nudge .2s ease-in-out; }
   .hint { transition: outline-color .2s; }
   @media (prefers-reduced-motion: reduce) { .card { transition: none !important; animation: none !important; } }
+  /* Aces gently glow after the deal until the first move */
+  .card::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: var(--md-primary); opacity: 0; box-shadow: inset 0 0 0 2px var(--md-primary); }
+  .card.ace-glow { animation: aceIn .6s ease-out both, acePulse 2.4s ease-in-out .6s infinite; }
+  .card.ace-glow::after { animation: aceTintIn .6s ease-out both, aceTint 2.4s ease-in-out .6s infinite; }
+  @keyframes aceIn { from { scale: 1; } to { scale: 1.05; } }
+  @keyframes acePulse { 0%, 100% { scale: 1.05; } 50% { scale: 1.02; } }
+  @keyframes aceTintIn { from { opacity: 0; } to { opacity: .16; } }
+  @keyframes aceTint { 0%, 100% { opacity: .16; } 50% { opacity: .07; } }
+  @media (prefers-reduced-motion: reduce) { .card.ace-glow::after { opacity: .14; } }
   .card .idx {
     position: absolute; left: calc(var(--cw) * .09); top: calc(var(--cw) * .07);
     display: flex; align-items: center; gap: calc(var(--cw) * .02);
@@ -287,6 +297,14 @@
     autoFoundation(); save(); dealAnimation(); updateStatus();
   }
   // Quick deal: cards spread out from the top centre, row by row.
+  // Point out where the Aces are until the first move.
+  const ACES = [0, 13, 26, 39];
+  let glowT = null;
+  function aceGlow(on, wait = 0) {
+    clearTimeout(glowT);
+    const apply = () => ACES.forEach(id => cardEl[id].classList.toggle('ace-glow', on && !S.started && locate(id).t !== 'found'));
+    if (on && wait) glowT = setTimeout(apply, wait); else apply();
+  }
   function dealAnimation() {
     if (!L.cw) computeLayout();
     table.classList.add('no-anim');
@@ -297,6 +315,7 @@
     const delays = new Map();
     S.cols.forEach((col, c) => col.forEach((id, k) => delays.set(id, (k * 8 + c) * 13)));
     render({ delays });
+    aceGlow(true, Math.max(0, ...delays.values()) + MOVE_MS + 150);
   }
 
   // ---------- Rules ----------
@@ -336,11 +355,14 @@
     if (S.won || !legal(src, dst)) return false;
     history.push(snapshot());
     autoOrder = [];
+    aceGlow(false);
     apply(src, dst);
     S.moves++;
     if (!S.started) { S.started = true; countPlayed(); }
+    // the board right after your move, before any card goes up on its own
+    const mid = { ...S, cols: S.cols.map(c => c.slice()), cells: S.cells.slice(), found: S.found.slice() };
     autoFoundation();
-    afterMove();
+    afterMove(mid);
     return true;
   }
 
@@ -368,14 +390,22 @@
 
   // Cards flying up on their own follow the main move one after another.
   const MOVE_MS = 220, AUTO_MS = 380, AUTO_START = MOVE_MS + 60;
-  const autoDelays = () => new Map(autoOrder.map((id, k) => [id, AUTO_START + k * 110]));
-  function afterMove() {
-    const delays = autoDelays();
+  var autoTimer = null;
+  // Show your move first; once it has landed, cards go up to the foundations one after another.
+  function showMove(mid) {
+    clearTimeout(autoTimer); autoTimer = null;
+    if (!autoOrder.length || !mid) { render(); return 0; }
+    const real = S; S = mid; render(); S = real;
+    const delays = new Map(autoOrder.map((id, k) => [id, k * 110]));
+    autoTimer = setTimeout(() => { autoTimer = null; render({ delays, auto: new Set(delays.keys()) }); }, AUTO_START);
+    return AUTO_START + (autoOrder.length - 1) * 110 + AUTO_MS;
+  }
+  function afterMove(mid) {
     if (S.found.every(f => f === 13)) {
-      S.won = true; recordWin(); save(); render({ delays, auto: new Set(delays.keys()) }); updateStatus();
-      setTimeout(showWin, (delays.size ? AUTO_MS : MOVE_MS) + 250 + Math.max(0, ...delays.values())); return;
+      S.won = true; recordWin(); save(); const t = showMove(mid); updateStatus();
+      setTimeout(showWin, Math.max(t, MOVE_MS) + 250); return;
     }
-    save(); render({ delays, auto: new Set(delays.keys()) }); updateStatus();
+    save(); showMove(mid); updateStatus();
     if (!anyMove()) snack('No moves left — try Undo or a new game');
   }
 
@@ -505,6 +535,7 @@
   }
 
   function render(opts = {}) {
+    if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
     renderOpts = opts; lift = 0;
     if (!L.cw) computeLayout();
     if (opts.instant) table.classList.add('no-anim');
@@ -702,7 +733,7 @@
   buildDom();
   computeLayout();
   const saved = store.get('fc.state', null);
-  if (saved && saved.S && Array.isArray(saved.S.cols)) { S = saved.S; history = saved.history || []; render({ instant: true }); updateStatus(); }
+  if (saved && saved.S && Array.isArray(saved.S.cols)) { S = saved.S; history = saved.history || []; render({ instant: true }); updateStatus(); aceGlow(true, 300); }
   else newGame(randomGame());
   if (!store.get('fc.seenHelp', false)) { open('helpScrim'); store.set('fc.seenHelp', true); }
 
